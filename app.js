@@ -140,7 +140,7 @@ const getAccessToken = async () => {
 }
 
 
-cron("* */3 * * *", () => {
+cron.schedule("* */4 * * *", () => {
   (async () => {
     try {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
@@ -196,13 +196,13 @@ cron("* */3 * * *", () => {
       const accessToken = await getAccessToken();
       console.log("🚀 ~ file: app.js:191 ~ accessToken:", accessToken)
       console.log(`Update Anime / Addding new episode [${currentTime(new Date().toISOString())}]`);
-      // console.log(payloadForUpdate)
+      await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Jumlah Anime Update ${updatedAnimes.length}`);
       payloadForUpdate.forEach(async (update, idx) => {
         setTimeout(async () => {
           await updateAPIAnime(accessToken, update.notif, update.payload);
         }, (idx * 10000))
       });
-      
+      await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Monitoring End [${currentTime(new Date().toISOString())}]`);
     } catch (error) {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, error.message);
     }
