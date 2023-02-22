@@ -1,8 +1,10 @@
 require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
+const cron = require("node-cron");
 const {
-  senderSuccessUpdateAnime
+  senderSuccessUpdateAnime,
+  senderNofitication,
 } = require("./telegramService");
 const {
   currentTime
@@ -124,7 +126,7 @@ const updateAPIAnime = async (accessToken, notif, payload) => {
       },
     });
     console.log(addNewEpisode.data.data);
-    senderSuccessUpdateAnime(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, notif.title, notif.episode);
+    await senderSuccessUpdateAnime(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, notif.title, notif.episode);
   } catch (error) {
     console.log(error);
   }
@@ -137,67 +139,72 @@ const getAccessToken = async () => {
   return newToken.accessToken;
 }
 
-(async () => {
-  console.log(`Program Start [${currentTime(new Date().toISOString())}]`);
-  const updatedAnimes = [];
-  // Get Animes Ongoing From Main API
-  console.log(`Get Animes Ongoing [${currentTime(new Date().toISOString())}]`);
-  const ongoingAnimes = await getAllAnimesOngoing("https://api.deyapro.com");
-  // Get Details Anime From SQL
-  console.log(`Get Details Anime [${currentTime(new Date().toISOString())}]`);
-  const detailAnimes = await Promise.all(ongoingAnimes.map(async (anime) => {
-    return getMasterLink(anime.id, anime.totalEps)
-  }));
-  // Get Updated Link Episode
-  console.log(`Get Updated Link Episode [${currentTime(new Date().toISOString())}]`);
-  await Promise.all(detailAnimes.map(async (anime) => {
-    const updatedLinks = await checkUpdatedAnime("https://addon.deyapro.com", anime.link, anime.totalEps);
-    if (updatedLinks.length >= 1) {
-      updatedLinks.forEach((link) => {
-        updatedAnimes.push({
-          id: anime.id,
-          title: anime.title,
-          link
-        });
+
+cron("* */3 * * *", () => {
+  (async () => {
+    try {
+      await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
+      console.log(`Program Start [${currentTime(new Date().toISOString())}]`);
+      const updatedAnimes = [];
+      // Get Animes Ongoing From Main API
+      console.log(`Get Animes Ongoing [${currentTime(new Date().toISOString())}]`);
+      const ongoingAnimes = await getAllAnimesOngoing("https://api.deyapro.com");
+      // Get Details Anime From SQL
+      console.log(`Get Details Anime [${currentTime(new Date().toISOString())}]`);
+      const detailAnimes = await Promise.all(ongoingAnimes.map(async (anime) => {
+        return getMasterLink(anime.id, anime.totalEps)
+      }));
+      // Get Updated Link Episode
+      console.log(`Get Updated Link Episode [${currentTime(new Date().toISOString())}]`);
+      await Promise.all(detailAnimes.map(async (anime) => {
+        const updatedLinks = await checkUpdatedAnime("https://addon.deyapro.com", anime.link, anime.totalEps);
+        if (updatedLinks.length >= 1) {
+          updatedLinks.forEach((link) => {
+            updatedAnimes.push({
+              id: anime.id,
+              title: anime.title,
+              link
+            });
+          });
+        }
+      }));
+      // Get Embed Player From Updated Link Episode
+      console.log(`Get Embed Player [${currentTime(new Date().toISOString())}]`);
+      const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
+        const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
+        const [,numEps] = textEpisode.split("-episode-");
+        const embedLink = await getEmbedUpdatedAnime("https://addon.deyapro.com", anime.link);
+        return {
+          notif: {
+            title: anime.title,
+            episode: numEps,
+          },
+          payload: {
+            numEpisode: parseFloat(numEps),
+            source360p: embedLink,
+            source480p: "-",
+            source720p: "-",
+            result360p: "-",
+            result480p:"-",
+            result720p: "-",
+            animeId: anime.id,
+            published: true
+          }
+        }
+      }));
+    
+      const accessToken = await getAccessToken();
+      console.log("🚀 ~ file: app.js:191 ~ accessToken:", accessToken)
+      console.log(`Update Anime / Addding new episode [${currentTime(new Date().toISOString())}]`);
+      // console.log(payloadForUpdate)
+      payloadForUpdate.forEach(async (update, idx) => {
+        setTimeout(async () => {
+          await updateAPIAnime(accessToken, update.notif, update.payload);
+        }, (idx * 10000))
       });
+      
+    } catch (error) {
+      await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, error.message);
     }
-  }));
-  // Get Embed Player From Updated Link Episode
-  console.log(`Get Embed Player [${currentTime(new Date().toISOString())}]`);
-  const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
-    const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
-    const [,numEps] = textEpisode.split("-episode-");
-    const embedLink = await getEmbedUpdatedAnime("https://addon.deyapro.com", anime.link);
-    return {
-      notif: {
-        title: anime.title,
-        episode: numEps,
-      },
-      payload: {
-        numEpisode: parseFloat(numEps),
-        source360p: embedLink,
-        source480p: "-",
-        source720p: "-",
-        result360p: "-",
-        result480p:"-",
-        result720p: "-",
-        animeId: anime.id,
-        published: true
-      }
-    }
-  }));
-
-  const accessToken = await getAccessToken();
-  console.log("🚀 ~ file: app.js:191 ~ accessToken:", accessToken)
-  console.log(`Update Anime / Addding new episode [${currentTime(new Date().toISOString())}]`);
-  // console.log(payloadForUpdate)
-  payloadForUpdate.forEach(async (update, idx) => {
-    setTimeout(async () => {
-      await updateAPIAnime(accessToken, update.notif, update.payload);
-    }, (idx * 2000))
-  });
-})();
-
-// (async () => {
-//   await getAccessToken();
-// })()
+  })();
+})

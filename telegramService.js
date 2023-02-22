@@ -8,6 +8,16 @@ exports.senderSuccessUpdateAnime = async (axios, teleToken, teleMessageId, title
   });
 };
 
+exports.senderNofitication = async (axios, teleToken, teleMessageId, text) => {
+  const message = `>> NOTIFIKASI <<\n${text}`;
+  await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
+    params: {
+      chat_id: teleMessageId,
+      text: message,
+    }
+  });
+};
+
 // exports.sendWarningDomainMessage = async (ctx, chatId, datas) => {
 //   const parsingData = datas.map((data) => {
 //     return `Hosting    : ${data.hosting}\nDomain   : ${data.domain}\nSisa Hari  : ${data.remaining} Hari\nExpired    : ${data.expired}\nSegera Perpanjang Domain!!\n`;
