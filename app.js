@@ -16,7 +16,6 @@ const {
   queryDatabase,
   logging,
 } = require("./database/functions");
-const { log } = require("console");
 
 const getMasterLink = async (mongoId, totalEps) => {
   const con = await connectToDatabase(publicConf);
@@ -140,7 +139,7 @@ const getAccessToken = async () => {
 }
 
 
-cron.schedule("* */4 * * *", () => {
+cron.schedule("0 */1 * * *", () => {
   (async () => {
     try {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
