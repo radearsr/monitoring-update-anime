@@ -16,4 +16,10 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD}}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            ls
+            cd /workspace/next-hosting/monitoring-update-anime/
+            git fetch
+            git reset --hard HEAD
+            git merge origin/main
+            git log -1
+            npm install
+            pm2 restart monitoring-anime
