@@ -14,6 +14,7 @@ const {
   queryDatabase,
   logging,
 } = require("./database/functions");
+const { log } = require("console");
 
 const getMasterLink = async (mongoId, totalEps) => {
   const con = await connectToDatabase(publicConf);
@@ -64,7 +65,7 @@ const loginAPI = async () => {
     username: "radea_surya",
     password: "radea123"
   });
-  await writeTokenToFile(login.data.data.accessToken, login.data.data.refreshToken);
+  return writeTokenToFile(login.data.data.accessToken, login.data.data.refreshToken);
 };
 
 const readTokenFromFile = () => (
@@ -96,20 +97,19 @@ const writeTokenToFile = (accessToken, refreshToken) => {
 
 const checkAccessToken = async (accessToken) => {
   try {
-    await axios.post("https://api.deyapro.com/api/v1/episodes", {
-      source360p: "-",
-    }, {
+    console.log("CheckAccessToken");
+    const { data } = await axios.post("https://api.deyapro.com/api/v1/episodes", {}, {
       headers: {
         Authorization: `Bearer ${accessToken}`
       },
     });
+    console.log("Token masih bisa");
     return accessToken;
   } catch (error) {
     if (error.response) {
       if (error.response.data.message === "Token tidak valid") {
+        console.log(error.response.data);
         await loginAPI();
-        const token = JSON.parse(await readTokenFromFile());
-        return token.accessToken;
       }
     }
   }
@@ -132,9 +132,9 @@ const updateAPIAnime = async (accessToken, notif, payload) => {
 
 const getAccessToken = async () => {
   const token = JSON.parse(await readTokenFromFile());
-  console.log(token.accessToken)
-  checkAccessToken(token.accessToken);
-  console.log(token.accessToken)
+  await checkAccessToken(token.accessToken);
+  const newToken = JSON.parse(await readTokenFromFile());
+  return newToken.accessToken;
 }
 
 (async () => {
@@ -142,7 +142,7 @@ const getAccessToken = async () => {
   const updatedAnimes = [];
   // Get Animes Ongoing From Main API
   console.log(`Get Animes Ongoing [${currentTime(new Date().toISOString())}]`);
-  const ongoingAnimes = await getAllAnimesOngoing("http://localhost:5000");
+  const ongoingAnimes = await getAllAnimesOngoing("https://api.deyapro.com");
   // Get Details Anime From SQL
   console.log(`Get Details Anime [${currentTime(new Date().toISOString())}]`);
   const detailAnimes = await Promise.all(ongoingAnimes.map(async (anime) => {
@@ -151,7 +151,7 @@ const getAccessToken = async () => {
   // Get Updated Link Episode
   console.log(`Get Updated Link Episode [${currentTime(new Date().toISOString())}]`);
   await Promise.all(detailAnimes.map(async (anime) => {
-    const updatedLinks = await checkUpdatedAnime("http://localhost:4000", anime.link, anime.totalEps);
+    const updatedLinks = await checkUpdatedAnime("https://addon.deyapro.com", anime.link, anime.totalEps);
     if (updatedLinks.length >= 1) {
       updatedLinks.forEach((link) => {
         updatedAnimes.push({
@@ -167,7 +167,7 @@ const getAccessToken = async () => {
   const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
     const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
     const [,numEps] = textEpisode.split("-episode-");
-    const embedLink = await getEmbedUpdatedAnime("http://localhost:4000", anime.link);
+    const embedLink = await getEmbedUpdatedAnime("https://addon.deyapro.com", anime.link);
     return {
       notif: {
         title: anime.title,
@@ -187,20 +187,17 @@ const getAccessToken = async () => {
     }
   }));
 
-  const accessToken = getAccessToken();
-
+  const accessToken = await getAccessToken();
+  console.log("🚀 ~ file: app.js:191 ~ accessToken:", accessToken)
   console.log(`Update Anime / Addding new episode [${currentTime(new Date().toISOString())}]`);
   // console.log(payloadForUpdate)
-  await updateAPIAnime(accessToken, payloadForUpdate[0].notif, payloadForUpdate[0].payload);
-
-  // payloadForUpdate.forEach(async (update, idx) => {
-  //   setTimeout(async () => {
-  //     await updateAPIAnime(accessToken, update.notif, update.payload);
-  //   }, (idx * 2000))
-  // });
+  payloadForUpdate.forEach(async (update, idx) => {
+    setTimeout(async () => {
+      await updateAPIAnime(accessToken, update.notif, update.payload);
+    }, (idx * 2000))
+  });
 })();
 
-// const text = "https://otakudesu.ltd/episode/bnha-s6-episode-20-sub-indo/";
-// const [textEpisode] = text.match(/.episode-[0-9]{1,6}/);
-// const [,numEps] = textEpisode.split("-episode-");
-// console.log(numEps);
+// (async () => {
+//   await getAccessToken();
+// })()
