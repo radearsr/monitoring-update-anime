@@ -139,7 +139,7 @@ const getAccessToken = async () => {
 }
 
 
-cron.schedule("0 */1 * * *", () => {
+cron.schedule("0 */6 * * *", () => {
   (async () => {
     try {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
