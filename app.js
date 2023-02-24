@@ -111,6 +111,9 @@ const checkAccessToken = async (accessToken) => {
       if (error.response.data.message === "Token tidak valid") {
         console.log(error.response.data);
         await loginAPI();
+      } else if (error.response.data.message === "Access token expired") {
+        console.log(error.response.data);
+        await loginAPI();
       }
     }
   }
