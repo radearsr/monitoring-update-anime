@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 
 exports.publicConf = mysql.createPool({
-  host:"deyapro.com",
+  host:"103.219.251.246",
   user: "deyaproc_denonime",
   password: "d3n0n1m3Db",
   database: "deyaproc_scraping",
