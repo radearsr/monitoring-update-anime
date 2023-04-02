@@ -22,4 +22,4 @@ jobs:
             git merge origin/main
             git log -1
             npm install
-            pm2 restart monitoring-anime
+            pm2 restart 4
