@@ -1,7 +1,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
-const cron = require("node-cron");
+const { Cron } = require("croner");
 const {
   senderSuccessUpdateAnime,
   senderNofitication,
@@ -141,8 +141,7 @@ const getAccessToken = async () => {
   return newToken.accessToken;
 }
 
-
-cron.schedule("0 */6 * * *", () => {
+Cron("0 */6 * * *", () => {
   (async () => {
     try {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
