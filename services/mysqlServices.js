@@ -1,10 +1,11 @@
+require("dotenv").config();
 const mysql = require("mysql");
 
 exports.publicConf = mysql.createPool({
-  host:"103.219.251.246",
-  user: "deyaproc_denonime",
-  password: "d3n0n1m3Db",
-  database: "deyaproc_scraping",
+  host: process.env.PUBLIC_MYSQL_HOST,
+  user: process.env.PUBLIC_MYSQL_USER,
+  password: process.env.PUBLIC_MYSQL_PASSWORD,
+  database: process.env.PUBLIC_MYSQL_DATABASE,
 });
 
 exports.localConf = mysql.createPool({

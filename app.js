@@ -15,7 +15,7 @@ const {
   connectToDatabase,
   queryDatabase,
   logging,
-} = require("./database/functions");
+} = require("./services/mysqlServices");
 
 const getMasterLink = async (mongoId, totalEps) => {
   const con = await connectToDatabase(publicConf);
@@ -42,7 +42,6 @@ const checkUpdatedAnime = async (endpoint, linkPage, totalEps) => {
     link: linkPage,
     lastTotalEps: totalEps,
   });
-
   if (data.status === "success" ) {
     return data.data;
   } else {
@@ -141,7 +140,7 @@ const getAccessToken = async () => {
   return newToken.accessToken;
 }
 
-Cron("0 */6 * * *", () => {
+Cron("0 */6 * * *", { timezone: "Asia/Jakarta" }, () => {
   (async () => {
     try {
       await senderNofitication(axios, process.env.BOT_TOKEN, process.env.GROUP_ID, `Program Start [${currentTime(new Date().toISOString())}]`);
