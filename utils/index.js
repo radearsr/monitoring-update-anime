@@ -10,7 +10,7 @@ const currentTime = () => {
 };
 
 const compareAndListed = (oldLists, newLists) => {
-  console.log(oldLists);
+  // console.log(oldLists);
   const resultLists = [];
   newLists.forEach((list) => {
     const [,newLink] = list.link.split("/anime");

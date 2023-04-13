@@ -10,11 +10,22 @@ const monitoringAnimesServices = async () => {
     const liveListAnimes = await axiosServices.getAllAnimes("https://addon.deyapro.com", "https://otakudesu.lol/anime-list");
     const localCountAnimes = await prismaServices.getCountAnimes();
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `LIVE=${liveListAnimes.length}\nLOCAL=${localCountAnimes}\n[${utils.currentTime()}]`);
-    if (liveListAnimes.length > localCountAnimes) {
-      const localAllAnimes = await prismaServices.getAllAnimes();
-      const updatedAnime = utils.compareAndListed(localAllAnimes, liveListAnimes);
-      await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Update Anime ${updatedAnime.length} [${utils.currentTime()}]`);
+    if (liveListAnimes.length <= localCountAnimes) {
+      await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Anime Up To Date [${utils.currentTime()}]`);
+      return axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Monit Anime End [${utils.currentTime()}]`);
     }
+    const localAllAnimes = await prismaServices.getAllAnimes();
+    const updatedAnimes = utils.compareAndListed(localAllAnimes, liveListAnimes);
+    await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Update Anime ${updatedAnimes.length} [${utils.currentTime()}]`);
+    const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
+      const details = await axiosServices.getDetailAnime("https://addon.deyapro.com", updateAnime.link);
+      return {
+        ...updateAnime,
+        ...details,
+        releaseDate: new Date(details.releaseDate),
+      };
+    }));
+    console.log(updatedWithDetails);
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Monit Anime End [${utils.currentTime()}]`);
   } catch (error) {
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, error.message);

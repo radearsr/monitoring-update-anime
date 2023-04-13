@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const slugs = require("slugs");
 
 const prisma = new PrismaClient();
 
@@ -41,7 +42,7 @@ const createEpisode = async (payload) => {
       publish: payload.publish,
     },
   });
-  if (!addedEpisode.id) throw new InvariantError("Gagal menambahkan episode ke database");
+  if (!addedEpisode.id) throw new Error("Gagal menambahkan episode ke database");
   return {
     animeId: addedEpisode.animeId,
     episodeId: addedEpisode.id,
@@ -64,6 +65,51 @@ const getAllAnimes = async () => {
   return animes;
 };
 
+exports.createNewAnime = async (payload) => {
+  const slug = slugs(payload.title);
+  const publish = payload.publish ? "Publish" : "NonPublish";
+  const addedAnime = await prisma.animes.create({
+    data: {
+      title: payload.title,
+      rating: payload.rating,
+      originalSource: payload.originalSource,
+      description: payload.description,
+      poster: payload.poster,
+      type: payload.type,
+      releaseDate: new Date(payload.releaseDate),
+      status: payload.status,
+      slug,
+      publish,
+    },
+  });
+  if (!addedAnime.animeId) throw new Error("Gagal menambahkan anime");
+  return {
+    animeId: addedAnime.animeId,
+    slug: addedAnime.slug,
+  };
+};
+
+exports.createAnimeGenres = async (genres, animeId) => {
+  const splitedGenre = genres.split(",");
+  const matchesGenre = await Promise.all(splitedGenre.map(async (genre) => {
+    const result = await prisma.genres.findFirst({
+      where: {
+        name: {
+          contains: genre.toLowerCase().trim(),
+          mode: "insensitive",
+        },
+      },
+    });
+    if (result) {
+      return { animeId, genreId: result.genreId };
+    }
+    return "";
+  }));
+  const matchesGenreFiltered = matchesGenre.filter((data) => data !== "");
+  await prisma.anime_genres.createMany({
+    data: matchesGenreFiltered,
+  });
+};
 
 // (async () => {
 //   const result = await getAllAnimes();
