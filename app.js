@@ -19,16 +19,27 @@ const monitoringAnimesServices = async () => {
     const localAllAnimes = await prismaServices.getAllAnimes();
     const updatedAnimes = utils.compareAndListed(localAllAnimes, liveListAnimes);
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Update Anime ${updatedAnimes.length} [${utils.currentTime()}]`);
+    const detailWithTrouble = {
+      lists: []
+    };
     const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
       const details = await axiosServices.getDetailAnime(ADDON_API_ENDPOINT, updateAnime.link);
-      console.log(new Date(details.releaseDate) ? );
-      return {
+      if (new Date(details.releaseDate).toString() !== "Invalid Date") {
+        return {
+          ...updateAnime,
+          ...details,
+          rating: parseFloat(details.rating),
+          releaseDate: new Date(details.releaseDate)
+        };
+      }
+      detailWithTrouble.lists.push({
         ...updateAnime,
         ...details,
-        releaseDate: new Date(details.releaseDate).toString() === "Invalid Date" ? new Date() : ,
-      };
+      });
     }));
-    console.log(updatedWithDetails);
+    const filteredUndefinedDetails = updatedWithDetails.filter((updatedList) => updatedList !== undefined);
+    console.log(filteredUndefinedDetails);
+    await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Anime Trouble ${JSON.stringify(detailWithTrouble)} [${utils.currentTime()}]`);
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Monit Anime End [${utils.currentTime()}]`);
   } catch (error) {
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, error.message);
