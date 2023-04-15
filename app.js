@@ -4,10 +4,12 @@ const prismaServices = require("./services/prismaServices");
 const axiosServices = require("./services/axiosServices");
 const utils = require("./utils");
 
+const ADDON_API_ENDPOINT = "http://localhost:4000";
+
 const monitoringAnimesServices = async () => {
   try {
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Monit Anime Start [${utils.currentTime()}]`);
-    const liveListAnimes = await axiosServices.getAllAnimes("https://addon.deyapro.com", "https://otakudesu.lol/anime-list");
+    const liveListAnimes = await axiosServices.getAllAnimes(ADDON_API_ENDPOINT, "https://otakudesu.lol/anime-list");
     const localCountAnimes = await prismaServices.getCountAnimes();
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `LIVE=${liveListAnimes.length}\nLOCAL=${localCountAnimes}\n[${utils.currentTime()}]`);
     if (liveListAnimes.length <= localCountAnimes) {
@@ -18,11 +20,12 @@ const monitoringAnimesServices = async () => {
     const updatedAnimes = utils.compareAndListed(localAllAnimes, liveListAnimes);
     await axiosServices.senderNofitication(process.env.BOT_TOKEN, process.env.GROUP_ID, `Update Anime ${updatedAnimes.length} [${utils.currentTime()}]`);
     const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
-      const details = await axiosServices.getDetailAnime("https://addon.deyapro.com", updateAnime.link);
+      const details = await axiosServices.getDetailAnime(ADDON_API_ENDPOINT, updateAnime.link);
+      console.log(new Date(details.releaseDate) ? );
       return {
         ...updateAnime,
         ...details,
-        releaseDate: new Date(details.releaseDate),
+        releaseDate: new Date(details.releaseDate).toString() === "Invalid Date" ? new Date() : ,
       };
     }));
     console.log(updatedWithDetails);
@@ -44,7 +47,7 @@ const monitoringEpisodeServices = async () => {
     // Get Updated Link Episode
     console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
     await Promise.all(ongoingAnimes.map(async (anime) => {
-      const updatedLinks = await axiosServices.checkUpdatedAnime("https://addon.deyapro.com", anime.originalSource, anime.totalEpisode);
+      const updatedLinks = await axiosServices.checkUpdatedAnime(ADDON_API_ENDPOINT, anime.originalSource, anime.totalEpisode);
       if (updatedLinks.length >= 1) {
         updatedLinks.forEach((link) => {
           updatedAnimes.push({
@@ -61,7 +64,7 @@ const monitoringEpisodeServices = async () => {
     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
       const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
       const [,numEps] = textEpisode.split("-episode-");
-      const embedLink = await axiosServices.getEmbedUpdatedAnime("https://addon.deyapro.com", anime.link);
+      const embedLink = await axiosServices.getEmbedUpdatedAnime(ADDON_API_ENDPOINT, anime.link);
       return {
         notif: {
           title: anime.title,
