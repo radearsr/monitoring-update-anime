@@ -15,7 +15,8 @@
     "croner": "^6.0.3",
     "dotenv": "^16.0.3",
     "mysql": "^2.18.1",
-    "slugs": "^0.1.3"
+    "slugs": "^0.1.3",
+    "telegraf": "^3.38.0"
   },
   "devDependencies": {
     "prisma": "^4.12.0"
