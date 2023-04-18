@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const slugs = require("slugs");
-
+const fs = require("fs");
 const prisma = new PrismaClient();
 
 // Get All Animes With Status Ongoing
@@ -24,7 +24,7 @@ const animesOngoing = async () => {
       originalSource: anime.originalSource,
       totalEpisode: anime._count.episodes,
     }
-  }) 
+  });
   return remapAnimes;
 };
 

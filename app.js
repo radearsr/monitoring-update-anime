@@ -4,6 +4,7 @@ const { Telegraf } = require("telegraf")
 const prismaServices = require("./services/prismaServices");
 const axiosServices = require("./services/axiosServices");
 const utils = require("./utils");
+const fs = require("fs");
 
 const ADDON_API_ENDPOINT = "https://addon.deyapro.com";
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -80,13 +81,25 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
         });
       }
     }));
-    console.log(updatedAnimes[0]);
+    // console.log(updatedAnimes);
     // Get Embed Player From Updated Link Episode
     console.log(`Get Embed Player [${utils.currentTime()}]`);
     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
-      if (!anime.link.includes("-episode-")) return false;
-      const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
-      const [,numEps] = textEpisode.split("-episode-");
+      let episodeType;
+      let textEpisode;
+      let numEps;
+      if (anime.link.includes("ova")) {
+        [textEpisode] = anime.link.match(/.ova-[0-9]{1,6}/);
+        [,numEps] = textEpisode.split("ova-");
+        episodeType = "Ova";
+      } else if (anime.link.includes("episode")) {
+        [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
+        [,numEps] = textEpisode.split("episode-");
+        episodeType = "Tv";
+      } else {
+        numEps = 1;
+        episodeType = "Tv";
+      }
       const embedLink = await axiosServices.getEmbedUpdatedAnime(ADDON_API_ENDPOINT, anime.link);
       return {
         notif: {
@@ -95,7 +108,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
         },
         payload: {    
           animeId: anime.id,
-          episodeType: "Tv",
+          episodeType,
           streamStrategy: "Otakudesu",
           numEpisode: parseInt(numEps),
           sourceDefault: embedLink,
@@ -106,9 +119,6 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       }
     }));
     await axiosServices.senderNofitication(botToken, chatId, `Jumlah Anime Update ${updatedAnimes.length}`);
-    const filteredPayload = payloadForUpdate.filter((payload) => payload !== false);
-    // console.log(payloadForUpdate.length);
-    // console.log(filteredPayload.length);
     payloadForUpdate.forEach(async (update, idx) => {
       setTimeout(async () => {
         await prismaServices.createEpisode(update.payload);
@@ -121,7 +131,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
   }
 }
 
-Cron("0 */6 * * *", { timezone: "Asia/Jakarta" }, async () => {
+Cron("0 */4 * * *", { timezone: "Asia/Jakarta" }, async () => {
   await monitoringEpisodeServices(process.env.BOT_TOKEN, process.env.GROUP_ID);
 });
 
