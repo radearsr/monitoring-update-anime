@@ -109,7 +109,8 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
   }
 }
 
-Cron("0 */6 * * *", { timezone: "Asia/Jakarta" }, () => {
+Cron("0 */6 * * *", { timezone: "Asia/Jakarta" }, async () => {
+  await monitoringEpisodeServices(process.env.BOT_TOKEN, process.env.GROUP_ID);
 });
 
 bot.command("newanime", async (ctx) => {
