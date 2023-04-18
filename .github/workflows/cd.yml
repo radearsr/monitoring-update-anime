@@ -16,10 +16,10 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD}}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /workspace/next-hosting/monitoring-update-anime/
+            cd monitoring-update-anime
             git fetch
             git reset --hard HEAD
             git merge origin/main
             git log -1
             npm install
-            pm2 restart 4
+            pm2 restart MONANIME
