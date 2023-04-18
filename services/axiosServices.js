@@ -45,8 +45,18 @@ const getDetailAnime = async (endpoint, linkPage) => {
   }
 };
 
-const senderSuccessUpdateAnime = async (teleToken, teleMessageId, title, episode) => {
+const senderSuccessUpdateEpisode = async (teleToken, teleMessageId, title, episode) => {
   const message = `✅ ANIME UPDATE\n>>${title}<<\n>>Episode ${episode}<<\n`;
+  await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
+    params: {
+      chat_id: teleMessageId,
+      text: message,
+    }
+  });
+};
+
+const senderSuccessUpdateNewAnime = async (teleToken, teleMessageId, title) => {
+  const message = `🔅 ANIME NEW\n>>${title}<<\n`;
   await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
     params: {
       chat_id: teleMessageId,
@@ -70,6 +80,7 @@ module.exports = {
   getEmbedUpdatedAnime,
   getAllAnimes,
   getDetailAnime,
-  senderSuccessUpdateAnime,
+  senderSuccessUpdateEpisode,
+  senderSuccessUpdateNewAnime,
   senderNofitication,
 };

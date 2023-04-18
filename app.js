@@ -5,7 +5,7 @@ const prismaServices = require("./services/prismaServices");
 const axiosServices = require("./services/axiosServices");
 const utils = require("./utils");
 
-const ADDON_API_ENDPOINT = "http://localhost:4000";
+const ADDON_API_ENDPOINT = "https://addon.deyapro.com";
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const monitoringAnimesServices = async (botToken, chatId) => {
@@ -31,7 +31,9 @@ const monitoringAnimesServices = async (botToken, chatId) => {
           ...updateAnime,
           ...details,
           rating: parseFloat(details.rating),
-          releaseDate: new Date(details.releaseDate)
+          releaseDate: new Date(details.releaseDate),
+          originalSource: updateAnime.link,
+          publish: true,
         };
       }
       detailWithTrouble.lists.push({
@@ -39,8 +41,15 @@ const monitoringAnimesServices = async (botToken, chatId) => {
         ...details,
       });
     }));
-    const filteredUndefinedDetails = updatedWithDetails.filter((updatedList) => updatedList !== undefined);
-    console.log(filteredUndefinedDetails);
+    const animesPayloadFiltered = updatedWithDetails.filter((updatedList) => updatedList !== undefined);
+    // console.log(animesPayloadFiltered);
+    animesPayloadFiltered.forEach((animePayload, idx) => {
+      setTimeout(async () => {
+        const addedAnime = await prismaServices.createNewAnime(animePayload);
+        await axiosServices.senderSuccessUpdateNewAnime(botToken, chatId, addedAnime.title);
+        await prismaServices.createAnimeGenres(animePayload.genres, addedAnime.animeId);
+      }, idx * 10000);
+    });
     await axiosServices.senderNofitication(botToken, chatId, `Anime Trouble ${JSON.stringify(detailWithTrouble)} [${utils.currentTime()}]`);
     await axiosServices.senderNofitication(botToken, chatId, `Monit Anime End [${utils.currentTime()}]`);
   } catch (error) {
@@ -56,7 +65,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     // Get Animes Ongoing From Supabase DB
     console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
     const ongoingAnimes = await prismaServices.animesOngoing();
-    console.log(ongoingAnimes);
+    // console.log(ongoingAnimes);
     // Get Updated Link Episode
     console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
     await Promise.all(ongoingAnimes.map(async (anime) => {
@@ -75,6 +84,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     // Get Embed Player From Updated Link Episode
     console.log(`Get Embed Player [${utils.currentTime()}]`);
     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
+      console.log(anime);
       const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
       const [,numEps] = textEpisode.split("-episode-");
       const embedLink = await axiosServices.getEmbedUpdatedAnime(ADDON_API_ENDPOINT, anime.link);
@@ -96,11 +106,11 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       }
     }));
     await axiosServices.senderNofitication(botToken, chatId, `Jumlah Anime Update ${updatedAnimes.length}`);
-    console.log(payloadForUpdate);
+    // console.log(payloadForUpdate);
     payloadForUpdate.forEach(async (update, idx) => {
       setTimeout(async () => {
         await prismaServices.createEpisode(update.payload);
-        await axiosServices.senderSuccessUpdateAnime(botToken, chatId, update.notif.title, update.notif.episode);
+        await axiosServices.senderSuccessUpdateEpisode(botToken, chatId, update.notif.title, update.notif.episode);
       }, (idx * 10000))
     });
     await axiosServices.senderNofitication(botToken, chatId, `Monit Episode End [${utils.currentTime()}]`);

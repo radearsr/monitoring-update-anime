@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Get All Animes With Status Ongoing
 const animesOngoing = async () => {
   const animes = await prisma.animes.findMany({
-    take: 2,
     include: {
       _count: {
         select: {
@@ -65,7 +64,7 @@ const getAllAnimes = async () => {
   return animes;
 };
 
-exports.createNewAnime = async (payload) => {
+const createNewAnime = async (payload) => {
   const slug = slugs(payload.title);
   const publish = payload.publish ? "Publish" : "NonPublish";
   const addedAnime = await prisma.animes.create({
@@ -85,11 +84,12 @@ exports.createNewAnime = async (payload) => {
   if (!addedAnime.animeId) throw new Error("Gagal menambahkan anime");
   return {
     animeId: addedAnime.animeId,
+    title: addedAnime.title,
     slug: addedAnime.slug,
   };
 };
 
-exports.createAnimeGenres = async (genres, animeId) => {
+const createAnimeGenres = async (genres, animeId) => {
   const splitedGenre = genres.split(",");
   const matchesGenre = await Promise.all(splitedGenre.map(async (genre) => {
     const result = await prisma.genres.findFirst({
@@ -121,4 +121,6 @@ module.exports = {
   createEpisode,
   getCountAnimes,
   getAllAnimes,
+  createAnimeGenres,
+  createNewAnime,
 };
