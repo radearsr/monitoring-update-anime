@@ -1,7 +1,6 @@
 const { default: axios } = require("axios");
 
 const checkUpdatedAnime = async (endpoint, linkPage, totalEps) => {
-  console.log({endpoint, linkPage, totalEps})
   const { data } = await axios.post(`${endpoint}/api/monitoring`, {
     link: linkPage,
     lastTotalEps: totalEps,
