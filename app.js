@@ -80,11 +80,11 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
         });
       }
     }));
-    console.log(updatedAnimes);
+    console.log(updatedAnimes[0]);
     // Get Embed Player From Updated Link Episode
     console.log(`Get Embed Player [${utils.currentTime()}]`);
     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
-      console.log(anime);
+      if (!anime.link.includes("-episode-")) return false;
       const [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
       const [,numEps] = textEpisode.split("-episode-");
       const embedLink = await axiosServices.getEmbedUpdatedAnime(ADDON_API_ENDPOINT, anime.link);
@@ -106,7 +106,9 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       }
     }));
     await axiosServices.senderNofitication(botToken, chatId, `Jumlah Anime Update ${updatedAnimes.length}`);
-    // console.log(payloadForUpdate);
+    const filteredPayload = payloadForUpdate.filter((payload) => payload !== false);
+    // console.log(payloadForUpdate.length);
+    // console.log(filteredPayload.length);
     payloadForUpdate.forEach(async (update, idx) => {
       setTimeout(async () => {
         await prismaServices.createEpisode(update.payload);
