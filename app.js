@@ -92,6 +92,10 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
         [textEpisode] = anime.link.match(/.ova-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("ova-");
         episodeType = "Ova";
+      } else if (anime.link.includes("bagian")) {
+        [textEpisode] = anime.link.match(/.bagian-[0-9]{1,6}/);
+        [,numEps] = textEpisode.split("bagian-");
+        episodeType = "Tv";
       } else if (anime.link.includes("episode")) {
         [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("episode-");
@@ -127,6 +131,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     });
     await axiosServices.senderNofitication(botToken, chatId, `Monit Episode End [${utils.currentTime()}]`);
   } catch (error) {
+    console.log(error);
     await axiosServices.senderNofitication(botToken, chatId, error.message);
   }
 }
