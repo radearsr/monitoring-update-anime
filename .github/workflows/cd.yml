@@ -22,4 +22,6 @@ jobs:
             git merge origin/main
             git log -1
             npm install
+            npx prisma db pull
+            npx prisma generate
             pm2 restart MONANIME

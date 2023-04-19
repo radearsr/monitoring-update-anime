@@ -16,20 +16,21 @@ model anime_genres {
 }
 
 model animes {
-  animeId        Int            @id @default(autoincrement())
-  title          String?        @db.VarChar(100)
-  rating         Float
-  description    String?
-  poster         String?        @db.VarChar(100)
-  type           AnimeType      @default(Series)
-  originalSource String         @db.VarChar(100)
-  releaseDate    DateTime       @db.Date
-  status         StatusUpdate   @default(Completed)
-  slug           String?        @db.VarChar(100)
-  publish        StatusPublish  @default(Publish)
-  createdAt      DateTime       @default(now())
-  anime_genres   anime_genres[]
-  episodes       episodes[]
+  animeId           Int            @id @default(autoincrement())
+  title             String?        @db.VarChar(100)
+  rating            Float
+  description       String?
+  poster            String?        @db.VarChar(100)
+  type              AnimeType      @default(Series)
+  originalSource    String         @db.VarChar(100)
+  releaseDate       DateTime       @db.Date
+  status            StatusUpdate   @default(Completed)
+  slug              String?        @db.VarChar(100)
+  publish           StatusPublish  @default(Publish)
+  createdAt         DateTime       @default(now())
+  lastUpdateEpisode DateTime       @default(now()) @db.Timestamp(6)
+  anime_genres      anime_genres[]
+  episodes          episodes[]
 }
 
 model authentications {

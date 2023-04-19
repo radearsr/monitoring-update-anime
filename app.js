@@ -125,7 +125,8 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     await axiosServices.senderNofitication(botToken, chatId, `Jumlah Anime Update ${updatedAnimes.length}`);
     payloadForUpdate.forEach(async (update, idx) => {
       setTimeout(async () => {
-        await prismaServices.createEpisode(update.payload);
+        const createdEps = await prismaServices.createEpisode(update.payload);
+        await prismaServices.updateAnimeLastUpdateEpisode(createdEps.animeId);
         await axiosServices.senderSuccessUpdateEpisode(botToken, chatId, update.notif.title, update.notif.episode);
       }, (idx * 10000))
     });

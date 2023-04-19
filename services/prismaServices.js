@@ -49,6 +49,18 @@ const createEpisode = async (payload) => {
   };
 };
 
+const updateAnimeLastUpdateEpisode = async (animeId) => {
+  const updatedAnimes = await prisma.animes.update({
+    where: {
+      animeId,
+    },
+    data: {
+      lastUpdateEpisode: new Date(),
+    },
+  });
+  if (!updatedAnimes) throw new Error("Gagal Memperbarui LastUpdateEpisode");
+};
+
 const getCountAnimes = async () => {
   const totalAnime = await prisma.animes.count();
   return totalAnime;
@@ -123,4 +135,5 @@ module.exports = {
   getAllAnimes,
   createAnimeGenres,
   createNewAnime,
+  updateAnimeLastUpdateEpisode,
 };
