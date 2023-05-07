@@ -66,7 +66,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     // Get Animes Ongoing From Supabase DB
     console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
     const ongoingAnimes = await prismaServices.animesOngoing();
-    // console.log(ongoingAnimes);
+    // console.log({ ongoingAnimes });
     // Get Updated Link Episode
     console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
     await Promise.all(ongoingAnimes.map(async (anime) => {
@@ -88,17 +88,22 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       let episodeType;
       let textEpisode;
       let numEps;
-      if (anime.link.includes("ova")) {
+      // console.log(anime);
+      if (anime.link.includes("-ova")) {
         [textEpisode] = anime.link.match(/.ova-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("ova-");
         episodeType = "Ova";
-      } else if (anime.link.includes("bagian")) {
+      } else if (anime.link.includes("-bagian-")) {
         [textEpisode] = anime.link.match(/.bagian-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("bagian-");
         episodeType = "Tv";
-      } else if (anime.link.includes("episode")) {
+      } else if (anime.link.includes("-episode-")) {
         [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("episode-");
+        episodeType = "Tv";
+      } else if ((/.-[0-9]{1,6}-/).test(anime.link)){
+        [textEpisode] = anime.link.match(/.-[0-9]{1,6}/);
+        [,numEps] = textEpisode.split("-");
         episodeType = "Tv";
       } else {
         numEps = 1;
