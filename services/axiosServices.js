@@ -45,6 +45,17 @@ const getDetailAnime = async (endpoint, linkPage) => {
   }
 };
 
+const uploadImage  = async (endpoint, linkImage) => {
+  const { data: resultUpload } = await axios.post(`${endpoint}/downloader`, {
+    link: linkImage,
+  });
+  if (data.status === "success") {
+    return resultUpload.data.access;
+  } else {
+    return linkImage;
+  }
+};
+
 const senderSuccessUpdateEpisode = async (teleToken, teleMessageId, title, episode) => {
   const message = `✅ ANIME UPDATE\n>>${title}<<\n>>Episode ${episode}<<\n`;
   await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
@@ -80,6 +91,7 @@ module.exports = {
   getEmbedUpdatedAnime,
   getAllAnimes,
   getDetailAnime,
+  uploadImage,
   senderSuccessUpdateEpisode,
   senderSuccessUpdateNewAnime,
   senderNofitication,

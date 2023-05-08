@@ -28,9 +28,11 @@ const monitoringAnimesServices = async (botToken, chatId) => {
     const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
       const details = await axiosServices.getDetailAnime(ADDON_API_ENDPOINT, updateAnime.link);
       if (new Date(details.releaseDate).toString() !== "Invalid Date") {
+        const poster = await axiosServices.uploadImage("https://assets.deyapro.com", details.poster);
         return {
           ...updateAnime,
           ...details,
+          poster,
           rating: parseFloat(details.rating),
           releaseDate: new Date(details.releaseDate),
           originalSource: updateAnime.link,
