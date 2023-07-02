@@ -15,16 +15,20 @@ const monitoringAnimesServices = async (botToken, chatId) => {
     const liveListAnimes = await axiosServices.getAllAnimes(ADDON_API_ENDPOINT, "https://otakudesu.lol/anime-list");
     const localCountAnimes = await prismaServices.getCountAnimes();
     await axiosServices.senderNofitication(botToken, chatId, `LIVE=${liveListAnimes.length}\nLOCAL=${localCountAnimes}\n[${utils.currentTime()}]`);
+
     if (liveListAnimes.length <= localCountAnimes) {
       await axiosServices.senderNofitication(botToken, chatId, `Anime Up To Date [${utils.currentTime()}]`);
       return axiosServices.senderNofitication(botToken, chatId, `Monit Anime End [${utils.currentTime()}]`);
     }
+
     const localAllAnimes = await prismaServices.getAllAnimes();
     const updatedAnimes = utils.compareAndListed(localAllAnimes, liveListAnimes);
     await axiosServices.senderNofitication(botToken, chatId, `Update Anime ${updatedAnimes.length} [${utils.currentTime()}]`);
+
     const detailWithTrouble = {
       lists: []
     };
+
     const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
       const details = await axiosServices.getDetailAnime(ADDON_API_ENDPOINT, updateAnime.link);
       if (new Date(details.releaseDate).toString() !== "Invalid Date") {
@@ -42,7 +46,9 @@ const monitoringAnimesServices = async (botToken, chatId) => {
         ...details,
       });
     }));
+
     const animesPayloadFiltered = updatedWithDetails.filter((updatedList) => updatedList !== undefined);
+
     // console.log(animesPayloadFiltered);
     animesPayloadFiltered.forEach((animePayload, idx) => {
       setTimeout(async () => {
@@ -51,6 +57,7 @@ const monitoringAnimesServices = async (botToken, chatId) => {
         await prismaServices.createAnimeGenres(animePayload.genres, addedAnime.animeId);
       }, idx * 10000);
     });
+
     await axiosServices.senderNofitication(botToken, chatId, `Anime Trouble ${JSON.stringify(detailWithTrouble)} [${utils.currentTime()}]`);
     await axiosServices.senderNofitication(botToken, chatId, `Monit Anime End [${utils.currentTime()}]`);
   } catch (error) {
@@ -81,23 +88,24 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
         });
       }
     }));
-    // console.log(updatedAnimes);
+    console.log(updatedAnimes);
     // Get Embed Player From Updated Link Episode
     console.log(`Get Embed Player [${utils.currentTime()}]`);
     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
+      const [,slugAnime] = anime.link.split("/episode/");
       let episodeType;
       let textEpisode;
       let numEps;
-      if (anime.link.includes("ova")) {
-        [textEpisode] = anime.link.match(/.ova-[0-9]{1,6}/);
+      if (slugAnime.includes("ova")) {
+        [textEpisode] = slugAnime.match(/.ova-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("ova-");
         episodeType = "Ova";
-      } else if (anime.link.includes("bagian")) {
-        [textEpisode] = anime.link.match(/.bagian-[0-9]{1,6}/);
+      } else if (slugAnime.includes("bagian")) {
+        [textEpisode] = slugAnime.match(/.bagian-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("bagian-");
         episodeType = "Tv";
-      } else if (anime.link.includes("episode")) {
-        [textEpisode] = anime.link.match(/.episode-[0-9]{1,6}/);
+      } else if (slugAnime.includes("episode")) {
+        [textEpisode] = slugAnime.match(/.episode-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("episode-");
         episodeType = "Tv";
       } else {

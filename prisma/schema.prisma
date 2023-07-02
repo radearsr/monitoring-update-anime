@@ -68,6 +68,8 @@ model episodes {
 model genres {
   genreId      Int            @id @default(autoincrement())
   name         String?        @db.VarChar(50)
+  slug         String?        @unique
+  restricted   Boolean?       @default(false)
   anime_genres anime_genres[]
 }
 
@@ -112,4 +114,5 @@ enum StatusUpdate {
 enum streamType {
   Otakudesu
   OwnServer
+  Mp4
 }
