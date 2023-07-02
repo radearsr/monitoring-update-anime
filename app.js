@@ -32,9 +32,11 @@ const monitoringAnimesServices = async (botToken, chatId) => {
     const updatedWithDetails = await Promise.all(updatedAnimes.map(async (updateAnime) => {
       const details = await axiosServices.getDetailAnime(ADDON_API_ENDPOINT, updateAnime.link);
       if (new Date(details.releaseDate).toString() !== "Invalid Date") {
+        const poster = await axiosServices.uploadImage("https://assets.deyapro.com", details.poster);
         return {
           ...updateAnime,
           ...details,
+          poster,
           rating: parseFloat(details.rating),
           releaseDate: new Date(details.releaseDate),
           originalSource: updateAnime.link,
@@ -73,7 +75,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
     // Get Animes Ongoing From Supabase DB
     console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
     const ongoingAnimes = await prismaServices.animesOngoing();
-    // console.log(ongoingAnimes);
+    // console.log({ ongoingAnimes });
     // Get Updated Link Episode
     console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
     await Promise.all(ongoingAnimes.map(async (anime) => {
@@ -96,7 +98,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       let episodeType;
       let textEpisode;
       let numEps;
-      if (slugAnime.includes("ova")) {
+      if (slugAnime.includes("-ova")) {
         [textEpisode] = slugAnime.match(/.ova-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("ova-");
         episodeType = "Ova";
@@ -107,6 +109,10 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
       } else if (slugAnime.includes("episode")) {
         [textEpisode] = slugAnime.match(/.episode-[0-9]{1,6}/);
         [,numEps] = textEpisode.split("episode-");
+        episodeType = "Tv";
+      } else if ((/.-[0-9]{1,6}-/).test(anime.link)){
+        [textEpisode] = slugAnime.match(/.-[0-9]{1,6}/);
+        [,numEps] = textEpisode.split("-");
         episodeType = "Tv";
       } else {
         numEps = 1;
