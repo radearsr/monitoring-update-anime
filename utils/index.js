@@ -1,3 +1,5 @@
+const slugs = require("slugs");
+
 const currentTime = () => {
   const date = new Date();
   let hours = date.getHours();
@@ -11,11 +13,12 @@ const currentTime = () => {
 
 const compareAndListed = (oldLists, newLists) => {
   // console.log(oldLists);
+  // console.log(newLists);
   const resultLists = [];
   newLists.forEach((list) => {
-    const [,newLink] = list.link.split("/anime");
+    const newSlug = slugs(list.title);
     const filteredList = oldLists.filter((oldList) => {
-      if (oldList.originalSource.includes(newLink)) {
+      if (oldList.slug.includes(newSlug)) {
         return oldList;
       }
     });
