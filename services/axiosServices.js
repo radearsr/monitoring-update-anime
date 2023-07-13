@@ -1,7 +1,10 @@
+require("dotenv").config();
 const { default: axios } = require("axios");
+const slugs = require("slugs");
 
-const checkUpdatedAnime = async (endpoint, linkPage, totalEps) => {
-  const { data } = await axios.post(`${endpoint}/api/monitoring`, {
+
+const checkUpdatedAnime = async (linkPage, totalEps) => {
+  const { data } = await axios.post(`${process.env.ADDON_API_ENDPOINT}/api/monitoring`, {
     link: linkPage,
     lastTotalEps: totalEps,
   });
@@ -12,8 +15,8 @@ const checkUpdatedAnime = async (endpoint, linkPage, totalEps) => {
   }
 };
 
-const getEmbedUpdatedAnime = async (endpoint, linkPage) => {
-  const { data } = await axios.post(`${endpoint}/api/embed`, {
+const getEmbedUpdatedAnime = async (linkPage) => {
+  const { data } = await axios.post(`${process.env.ADDON_API_ENDPOINT}/api/embed`, {
     link: linkPage,
   });
   if (data.status === "success") {
@@ -23,8 +26,8 @@ const getEmbedUpdatedAnime = async (endpoint, linkPage) => {
   }
 };
 
-const getAllAnimes = async (endpoint, linkPage) => {
-  const { data } = await axios.post(`${endpoint}/api/animes`, {
+const getAllAnimes = async (linkPage) => {
+  const { data } = await axios.post(`${process.env.ADDON_API_ENDPOINT}/api/animes`, {
     link: linkPage,
   });
   if (data.status === "success") {
@@ -34,8 +37,8 @@ const getAllAnimes = async (endpoint, linkPage) => {
   }
 };
 
-const getDetailAnime = async (endpoint, linkPage) => {
-  const { data } = await axios.post(`${endpoint}/api/details`, {
+const getDetailAnime = async (linkPage) => {
+  const { data } = await axios.post(`${process.env.ADDON_API_ENDPOINT}/api/details`, {
     link: linkPage,
   });
   if (data.status === "success") {
@@ -45,46 +48,18 @@ const getDetailAnime = async (endpoint, linkPage) => {
   }
 };
 
-const uploadImage  = async (endpoint, linkImage) => {
-  const { data: resultUpload } = await axios.post(`${endpoint}/downloader`, {
-    link: linkImage,
+const uploadImage  = async (linkPoster, title) => {
+  console.log({ linkPoster, title });
+  const imageTitle = slugs(title);
+  const { data: resposeData } = await axios.post(`${process.env.ASSET_MANAGER_ENPOINT}/upload`, {
+    poster: linkPoster,
+    title: imageTitle
   });
-  if (data.status === "success") {
-    return resultUpload.data.access;
-  } else {
-    return linkImage;
-  }
+  return resposeData.data.access;
 };
 
-const senderSuccessUpdateEpisode = async (teleToken, teleMessageId, title, episode) => {
-  const message = `✅ ANIME UPDATE\n>>${title}<<\n>>Episode ${episode}<<\n`;
-  await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
-    params: {
-      chat_id: teleMessageId,
-      text: message,
-    }
-  });
-};
 
-const senderSuccessUpdateNewAnime = async (teleToken, teleMessageId, title) => {
-  const message = `🔅 ANIME NEW\n>>${title}<<\n`;
-  await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
-    params: {
-      chat_id: teleMessageId,
-      text: message,
-    }
-  });
-};
 
-const senderNofitication = async (teleToken, teleMessageId, text) => {
-  const message = `>> NOTIFIKASI <<\n${text}`;
-  await axios.get(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
-    params: {
-      chat_id: teleMessageId,
-      text: message,
-    }
-  });
-};
 
 module.exports = {
   checkUpdatedAnime,
@@ -92,7 +67,4 @@ module.exports = {
   getAllAnimes,
   getDetailAnime,
   uploadImage,
-  senderSuccessUpdateEpisode,
-  senderSuccessUpdateNewAnime,
-  senderNofitication,
 };

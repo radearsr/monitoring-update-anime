@@ -11,22 +11,16 @@ const currentTime = () => {
   return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${strTime}`;
 };
 
-const compareAndListed = (oldLists, newLists) => {
-  // console.log(oldLists);
-  // console.log(newLists);
-  const resultLists = [];
-  newLists.forEach((list) => {
-    const newSlug = slugs(list.title);
-    const filteredList = oldLists.filter((oldList) => {
-      if (oldList.slug.includes(newSlug)) {
-        return oldList;
-      }
-    });
-    if (filteredList.length < 1) {
-      resultLists.push(list);
+const compareAndListed = (localAnimeLists, liveAnimeLists) => {
+  const resultAnimes = []
+  liveAnimeLists.forEach((liveAnime) => {
+    const newAnimeSlug = slugs(liveAnime.title);
+    const sameAnimeSlug = localAnimeLists.find((localAnime) => (localAnime.anime_slug === newAnimeSlug));
+    if (!sameAnimeSlug) {
+      resultAnimes.push(liveAnime);
     }
   });
-  return resultLists;
+  return resultAnimes;
 };
 
 module.exports = {
