@@ -14,7 +14,7 @@ bot.command("newanime", async (ctx) => {
 });
 
 bot.command("newepisode", async (ctx) => {
-  await monitoringEpisodeServices(process.env.BOT_TOKEN, ctx.chat.id);
+  await services.monitoringEpisodeServices(process.env.BOT_TOKEN, ctx.chat.id);
 });
 
 bot.launch();

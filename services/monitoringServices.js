@@ -3,14 +3,34 @@ const axiosServices = require("./axiosServices");
 const telegramServices = require("./telegramServices");
 const animeServices = require("./animeServices");
 const utils = require("../utils");
+const slugs = require("slugs");
 
 const monitoringAnimesServices = async (botToken, chatId) => {
   try {
     await telegramServices.senderNofitication(botToken, chatId, `Monit Anime Start [${utils.currentTime()}]`);
-    const liveAnimeLists = await axiosServices.getAllAnimes(process.env.OTAKUDESU_URL);
-    // console.log(liveAnimeLists);
+    // const liveAnimeLists = await axiosServices.getAllAnimes(process.env.OTAKUDESU_URL);
+    const liveAnimeLists = [
+      {
+        title: "Ao Haru Ride",
+        status: "Completed",
+        type: "Series",
+        link: "https://otakudesu.lol/anime/ao-haru-subtitle-indonesia/"
+      },
+      {
+        title: "Aho Girl",
+        status: "Completed",
+        type: "Series",
+        link: "https://otakudesu.lol/anime/aho-girl-subtitle-indonesia/"
+      },
+      {
+        title: "Akkun to Kanojo",
+        status: "Completed",
+        type: "Series",
+        link: "https://otakudesu.lol/anime/akkun-kanojo-sub-indo/"
+      },
+    ];
     const liveAnimesCount = liveAnimeLists.length;
-    const localAnimesCount = await animeServices.getAnimesCount();
+    const localAnimesCount = await animeServices.getAnimesCount("OTAKUDESU");
 
     await telegramServices.senderNofitication(botToken, chatId, `>> LIVE <<\n>> ${liveAnimesCount} <<\n>> LOCAL <<\n>>${localAnimesCount}<<\n[${utils.currentTime()}]`);
 
@@ -44,7 +64,7 @@ const monitoringAnimesServices = async (botToken, chatId) => {
           await telegramServices.senderSuccessUpdateNewAnime(botToken, chatId, postedAnime.title);
         }
       } catch (error) {
-        // console.log(error);
+        console.log(error);
         await telegramServices.senderNofitication(botToken, chatId, `${updatedAnimes[idx].title}\n${JSON.stringify(error.response.data) ||  error.message}`);
       }
     }
@@ -54,90 +74,69 @@ const monitoringAnimesServices = async (botToken, chatId) => {
   }
 }
 
-// const monitoringEpisodeServices = async (botToken, chatId) => {
-//   try {
-//     await axiosServices.senderNofitication(botToken, chatId, `Monit Episode Start [${utils.currentTime()}]`);
-//     console.log(`Program Start [${utils.currentTime()}]`);
-//     const updatedAnimes = [];
-//     // Get Animes Ongoing From Supabase DB
-//     console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
-//     const ongoingAnimes = await prismaServices.animesOngoing();
-//     // console.log({ ongoingAnimes });
-//     // Get Updated Link Episode
-//     console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
-//     await Promise.all(ongoingAnimes.map(async (anime) => {
-//       const updatedLinks = await axiosServices.checkUpdatedAnime(ADDON_API_ENDPOINT, anime.originalSource, anime.totalEpisode);
-//       if (updatedLinks.length >= 1) {
-//         updatedLinks.forEach((link) => {
-//           updatedAnimes.push({
-//             id: anime.animeId,
-//             title: anime.title,
-//             link
-//           });
-//         });
-//       }
-//     }));
-//     console.log(updatedAnimes);
-//     // Get Embed Player From Updated Link Episode
-//     console.log(`Get Embed Player [${utils.currentTime()}]`);
-//     const payloadForUpdate = await Promise.all(updatedAnimes.map(async (anime) => {
-//       const [,slugAnime] = anime.link.split("/episode/");
-//       let episodeType;
-//       let textEpisode;
-//       let numEps;
-//       if (slugAnime.includes("-ova")) {
-//         [textEpisode] = slugAnime.match(/.ova-[0-9]{1,6}/);
-//         [,numEps] = textEpisode.split("ova-");
-//         episodeType = "Ova";
-//       } else if (slugAnime.includes("bagian")) {
-//         [textEpisode] = slugAnime.match(/.bagian-[0-9]{1,6}/);
-//         [,numEps] = textEpisode.split("bagian-");
-//         episodeType = "Tv";
-//       } else if (slugAnime.includes("episode")) {
-//         [textEpisode] = slugAnime.match(/.episode-[0-9]{1,6}/);
-//         [,numEps] = textEpisode.split("episode-");
-//         episodeType = "Tv";
-//       } else if ((/.-[0-9]{1,6}-/).test(anime.link)){
-//         [textEpisode] = slugAnime.match(/.-[0-9]{1,6}/);
-//         [,numEps] = textEpisode.split("-");
-//         episodeType = "Tv";
-//       } else {
-//         numEps = 1;
-//         episodeType = "Tv";
-//       }
-//       const embedLink = await axiosServices.getEmbedUpdatedAnime(ADDON_API_ENDPOINT, anime.link);
-//       return {
-//         notif: {
-//           title: anime.title,
-//           episode: numEps,
-//         },
-//         payload: {    
-//           animeId: anime.id,
-//           episodeType,
-//           streamStrategy: "Otakudesu",
-//           numEpisode: parseInt(numEps),
-//           sourceDefault: embedLink,
-//           sourceHd: "NULL",
-//           originalSourceEp: anime.link,
-//           publish: "Publish",
-//         }
-//       }
-//     }));
-//     await axiosServices.senderNofitication(botToken, chatId, `Jumlah Anime Update ${updatedAnimes.length}`);
-//     payloadForUpdate.forEach(async (update, idx) => {
-//       setTimeout(async () => {
-//         const createdEps = await prismaServices.createEpisode(update.payload);
-//         await prismaServices.updateAnimeLastUpdateEpisode(createdEps.animeId);
-//         await axiosServices.senderSuccessUpdateEpisode(botToken, chatId, update.notif.title, update.notif.episode);
-//       }, (idx * 10000))
-//     });
-//     await axiosServices.senderNofitication(botToken, chatId, `Monit Episode End [${utils.currentTime()}]`);
-//   } catch (error) {
-//     console.log(error);
-//     await axiosServices.senderNofitication(botToken, chatId, error.message);
-//   }
-// }
+const monitoringEpisodeServices = async (botToken, chatId) => {
+  try {
+    await telegramServices.senderNofitication(botToken, chatId, `Monit Episode Start [${utils.currentTime()}]`);
+    console.log(`Program Start [${utils.currentTime()}]`);
+    console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
+    const ongoingAnimeLists = await animeServices.getOngoingAnimes();
+
+    console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
+
+    for (let idxAnime = 0; idxAnime < ongoingAnimeLists.length; idxAnime++) {
+      const {
+        id: animeId,
+        title: animeTitle,
+        anime_detail_sources: animeSources,
+        episodes,
+      } = ongoingAnimeLists[idxAnime]
+
+      await telegramServices.senderNofitication(botToken, chatId, `CHECKING ${animeTitle} [${utils.currentTime()}]`);
+      const animeTotalEpisodes = episodes.length;
+
+      for (let idxSource = 0; idxSource < animeSources.length; idxSource++) {
+        try {
+          const {
+            url_source: animeUrlSource
+          } = animeSources[idxSource]
+          const episodeLinks = await axiosServices.checkUpdatedAnime(animeUrlSource, animeTotalEpisodes);
+          for (let idxEpisode = 0; idxEpisode < episodeLinks.length; idxEpisode++) {
+            try {
+              const {
+                episodeType,
+                numEps,
+              } = utils.getEpisodeTypeAndNumberEpisode(episodeLinks[idxEpisode]);
+              const embedVideo = await axiosServices.getEmbedUpdatedAnime(episodeLinks[idxEpisode]);
+              const episodeSlug = utils.createEpisodeSlug([slugs(animeTitle), episodeType, numEps]);
+              const createdEpisode = await animeServices.postNewEpisode({
+                episode_slug: episodeSlug,
+                episode_type: episodeType,
+                number_episode: parseInt(numEps),
+                url_source: episodeLinks[idxEpisode],
+                anime_id: animeId,
+              });
+              await animeServices.postNewEpisodeSource({ ...createdEpisode, url_source: embedVideo });
+              await telegramServices.senderSuccessUpdateEpisode(botToken, chatId, animeTitle, numEps);
+            } catch (error) {
+              console.log(error);
+              await telegramServices.senderNofitication(botToken, chatId, error.message);
+            }
+          }
+          await telegramServices.senderNofitication(botToken, chatId, `UP TO DATE ${animeTitle} [${utils.currentTime()}]`);
+        } catch (error) {
+          console.log(error);
+          await telegramServices.senderNofitication(botToken, chatId, error.message);
+        }
+      }
+    }
+    await telegramServices.senderNofitication(botToken, chatId, `Monit Episode End [${utils.currentTime()}]`);
+  } catch (error) {
+    console.log(error);
+    await telegramServices.senderNofitication(botToken, chatId, error.message);
+  }
+}
 
 module.exports = {
-  monitoringAnimesServices
+  monitoringAnimesServices,
+  monitoringEpisodeServices
 };

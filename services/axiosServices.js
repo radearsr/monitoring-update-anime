@@ -4,6 +4,7 @@ const slugs = require("slugs");
 
 
 const checkUpdatedAnime = async (linkPage, totalEps) => {
+  console.log({ linkPage, totalEps });
   const { data } = await axios.post(`${process.env.ADDON_API_ENDPOINT}/api/monitoring`, {
     link: linkPage,
     lastTotalEps: totalEps,
