@@ -107,7 +107,7 @@ const monitoringEpisodeServices = async (botToken, chatId) => {
                 numEps,
               } = utils.getEpisodeTypeAndNumberEpisode(episodeLinks[idxEpisode]);
               const embedVideo = await axiosServices.getEmbedUpdatedAnime(episodeLinks[idxEpisode]);
-              const episodeSlug = utils.createEpisodeSlug([slugs(animeTitle), episodeType, numEps]);
+              const episodeSlug = utils.createEpisodeSlug(slugs(animeTitle), episodeType, numEps);
               const createdEpisode = await animeServices.postNewEpisode({
                 episode_slug: episodeSlug,
                 episode_type: episodeType,
