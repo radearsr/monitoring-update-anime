@@ -50,7 +50,6 @@ const getDetailAnime = async (linkPage) => {
 };
 
 const uploadImage  = async (linkPoster, title) => {
-  console.log({ linkPoster, title });
   const imageTitle = slugs(title);
   const { data: resposeData } = await axios.post(`${process.env.ASSET_MANAGER_ENPOINT}/upload`, {
     poster: linkPoster,

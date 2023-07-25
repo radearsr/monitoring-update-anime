@@ -53,6 +53,7 @@ const getEpisodeTypeAndNumberEpisode = (linkEpisode) => {
 };
 
 const createEpisodeSlug = (animeSlug, episodeType, numEpisode) => {
+  numEpisode = numEpisode < 10 ? `0${numEpisode}` : numEpisode;
   let slug;
   switch (episodeType) {
     case "MV":
