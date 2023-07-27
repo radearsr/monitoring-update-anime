@@ -8,27 +8,7 @@ const slugs = require("slugs");
 const monitoringAnimesServices = async (botToken, chatId) => {
   try {
     await telegramServices.senderNofitication(botToken, chatId, `Monit Anime Start [${utils.currentTime()}]`);
-    // const liveAnimeLists = await axiosServices.getAllAnimes(process.env.OTAKUDESU_URL);
-    const liveAnimeLists = [
-      {
-        title: "Ao Haru Ride",
-        status: "Completed",
-        type: "Series",
-        link: "https://otakudesu.lol/anime/ao-haru-subtitle-indonesia/"
-      },
-      {
-        title: "Aho Girl",
-        status: "Completed",
-        type: "Series",
-        link: "https://otakudesu.lol/anime/aho-girl-subtitle-indonesia/"
-      },
-      {
-        title: "Akkun to Kanojo",
-        status: "Completed",
-        type: "Series",
-        link: "https://otakudesu.lol/anime/akkun-kanojo-sub-indo/"
-      },
-    ];
+    const liveAnimeLists = await axiosServices.getAllAnimes(process.env.OTAKUDESU_URL);
     const liveAnimesCount = liveAnimeLists.length;
     const localAnimesCount = await animeServices.getAnimesCount("OTAKUDESU");
 
