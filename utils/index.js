@@ -52,20 +52,17 @@ const getEpisodeTypeAndNumberEpisode = (linkEpisode) => {
   return { episodeType, numEps };
 };
 
-const createEpisodeSlug = (animeSlug, episodeType, numEpisode) => {
+const createEpisodeSlug = (animeSlug, episodeType, numEpisode, animeType) => {
   numEpisode = numEpisode < 10 ? `0${numEpisode}` : numEpisode;
   let slug;
-  switch (episodeType) {
-    case "MV":
-      slug = `${animeSlug}`;
-      return slug.toLowerCase();
-    case "OVA":
-      slug = `${animeSlug}-${episodeType}-${numEpisode}`;
-      return slug.toLowerCase();
-    default:
-      slug = `${animeSlug}-episode-${numEpisode}`;
-      return slug.toLowerCase();
+  if (animeType === "MOVIE" && episodeType === "OVA") {
+    slug = `${animeSlug}`;
+  } else if (animeType === "SERIES" && episodeType === "OVA") {
+    slug = `${animeSlug}-ova-${numEpisode}`;
+  } else {
+    slug = `${animeSlug}-episode-${numEpisode}`;
   }
+  return slug.toLowerCase();
 }
 module.exports = {
   currentTime,

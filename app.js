@@ -3,6 +3,7 @@ const { Cron } = require("croner");
 const { Telegraf } = require("telegraf")
 const services = require("./services/monitoringServices");
 const injectServices = require("./services/injectServices");
+const axios = require("axios");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -19,7 +20,35 @@ bot.command("newepisode", async (ctx) => {
 });
 
 bot.command("injectA", async (ctx) => {
-  await injectServices.injectAnimeServices(process.env.BOT_TOKEN, ctx.chat.id);
+  const endpoint = "https://denonime-api.vercel.app/api/v1";
+  const { data: { data: animes } } = await axios.get(`${endpoint}/animes/search`, {
+    params: {
+      querySearch: "",
+      currentPage: 1,
+      pageSize: 1400,
+    },
+  });
+  animes.forEach((anime, idx) => {
+    setTimeout(async () => {
+      await injectServices.injectAnimeVersi2(process.env.BOT_TOKEN, ctx.chat.id, anime);
+    }, 30000 * idx);
+  });
 });
+
+// (async () => {
+//   const endpoint = "https://denonime-api.vercel.app/api/v1";
+//   const { data: { data: animes } } = await axios.get(`${endpoint}/animes/search`, {
+//     params: {
+//       querySearch: "",
+//       currentPage: 2,
+//       pageSize: 400
+//     },
+//   });
+//   animes.forEach((anime, idx) => {
+//     setTimeout(async () => {
+//       await injectServices.injectAnimeVersi2(process.env.BOT_TOKEN, "-995715127", anime);
+//     }, 35000 * idx);
+//   });
+// })() 
 
 bot.launch();
