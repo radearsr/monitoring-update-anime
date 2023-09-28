@@ -67,9 +67,31 @@ const createEpisodeSlug = (animeSlug, episodeType, numEpisode) => {
       return slug.toLowerCase();
   }
 }
+
+const fixingMonth = (defaultMonth) => {
+  if (defaultMonth.toLowerCase().includes("okt")) {
+    return defaultMonth.toLowerCase().replace("okt", "Oct");
+  }
+  if (defaultMonth.toLowerCase().includes("mei")) {
+    return defaultMonth.toLowerCase().replace("mei", "May");
+  }
+  return defaultMonth;
+}
+
+const fixingDateFromText = (textDate) => {
+  textDate = fixingMonth(textDate);
+  if (textDate.toLowerCase().includes("sampai")) {
+    textDate = textDate.toLowerCase().split("sampai");
+    return textDate[0].trim();
+  }
+  return textDate;
+};
+
+
 module.exports = {
   currentTime,
   compareAndListed,
   getEpisodeTypeAndNumberEpisode,
-  createEpisodeSlug
+  createEpisodeSlug,
+  fixingDateFromText
 };

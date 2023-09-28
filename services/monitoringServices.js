@@ -12,8 +12,9 @@ const updateAnimeQueue = async.queue((task, completed) => {
     try {
       console.log(`[${utils.currentTime()}] GET ANIME DETAILS`);
       const details = await axiosServices.getDetailAnime(task.link);
-      if (new Date(details.releaseDate) == "Invalid Date") {
-        throw new Error(`INVALID_DATE__${task.link}`);
+      const actualDate = utils.fixingDateFromText(details.releaseDate);
+      if (new Date(actualDate) == "Invalid Date") {
+        throw new Error(`INVALID_DATE__(${details.releaseDate})__(${task.link})`);
       }
       console.log(
         `[${utils.currentTime()}] UPLOAD POSTER START (${details.poster})`
@@ -25,6 +26,7 @@ const updateAnimeQueue = async.queue((task, completed) => {
       console.log(`[${utils.currentTime()}] POST ANIME START`);
       const postedAnime = await animeServices.postNewAnime({
         ...details,
+        releaseDate: actualDate,
         status: task.status.toUpperCase(),
         type: task.type.toUpperCase(),
         rating: parseFloat(details.rating),
