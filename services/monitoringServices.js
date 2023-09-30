@@ -7,7 +7,7 @@ const utils = require("../utils");
 const slugs = require("slugs");
 
 const updateAnimeQueue = async.queue((task, completed) => {
-  console.log(`[${utils.currentTime()}] TASK INSERT ${task.link}`);
+  console.log(`[${utils.currentTime()}] TASK INSERT ANIME ${task.link}`);
   setTimeout(async () => {
     try {
       console.log(`[${utils.currentTime()}] GET ANIME DETAILS`);
@@ -38,10 +38,10 @@ const updateAnimeQueue = async.queue((task, completed) => {
         link: task.link,
         scrapingStrategy: "OTAKUDESU",
       });
-      console.log(`[${utils.currentTime()}] TASK END\n`);
+      console.log(`[${utils.currentTime()}] TASK ANIME END\n`);
       completed(null, details);
     } catch (error) {
-      console.log(`[${utils.currentTime()}] TASK ERROR\n`);
+      console.log(`[${utils.currentTime()}] TASK ANIME ERROR\n`);
       console.log(error);
       completed(error, null);
     }
@@ -133,98 +133,109 @@ const monitoringAnimesServices = async (botToken, chatId) => {
   }
 };
 
+const updateEpisodeQueue = async.queue((task, completed) => {
+  console.log(`[${utils.currentTime()}] TASK INSERT EPISODE ${task.episodeLink}`);
+  setTimeout(async () => {
+    try {
+      console.log(`[${utils.currentTime()}] GET NUM AND TYPE EPISODE`);
+      const { episodeType, numEps } =
+      utils.getEpisodeTypeAndNumberEpisode(task.episodeLink);
+      const embedVideo = await axiosServices.getEmbedUpdatedAnime(
+        task.episodeLink
+      );
+      console.log(`[${utils.currentTime()}] CREATE EPISODE SLUG`);
+      const episodeSlug = utils.createEpisodeSlug(
+        slugs(task.animeTitle),
+        episodeType,
+        numEps
+      );
+      console.log(`[${utils.currentTime()}] POST NEW EPISODE`);
+      const createdEpisode = await animeServices.postNewEpisode({
+        episode_slug: episodeSlug,
+        episode_type: episodeType,
+        number_episode: parseInt(numEps),
+        url_source: task.episodeLink,
+        anime_id: task.animeId,
+      });
+      console.log(`[${utils.currentTime()}] POST NEW SOURCES`);
+      await animeServices.postNewEpisodeSource({
+        ...createdEpisode,
+        url_source: embedVideo,
+      });
+      console.log(`[${utils.currentTime()}] TASK EPISODE END\n`);
+      completed(null, { animeTitle: task.animeTitle, numEps });
+    } catch (error) {
+      console.log(`[${utils.currentTime()}] TASK EPISODE ERROR\n`);
+      completed(error, null);
+    }
+  }, 5000);
+});
+
+const checkingEpisodeQueue = async.queue((task, completed) => {
+  const {
+    id: animeId,
+    title: animeTitle,
+    anime_detail_sources: animeSources,
+    episodes,
+  } = task;
+  console.log(`[${utils.currentTime()}] TASK CHECK START ${animeTitle} | ${animeId}\n`);
+  setTimeout(() => {
+    const animeTotalEpisodes = episodes.length;
+    animeSources.forEach(async (animeSource) => {
+      try {
+        const episodeLinks = await axiosServices.checkUpdatedAnime(animeSource.url_source, 0);
+        console.log(`[${utils.currentTime()}] COMPARE EPISODE LIST`);
+        const updatedEpisodeLinks = utils.compareAndListedEpisode(episodes, episodeLinks)
+        if (!updatedEpisodeLinks.length) throw new Error("EPISODE_UP_TO_DATE");
+        console.log(`[${utils.currentTime()}] CURRENT EPS ${animeTotalEpisodes}`);
+        console.log(`[${utils.currentTime()}] TASK CHECK END`);
+        const remapEpisodeLinks = updatedEpisodeLinks.map((episodeLink) => ({ episodeLink, animeId, animeTitle}))
+        completed(null, remapEpisodeLinks);
+      } catch (error) {
+        console.log(`[${utils.currentTime()}] CHECKING ERROR ${animeTitle}__${error.message}\n`);
+        completed(error, null);
+      }
+    });
+  }, 3000);
+});
+
 const monitoringEpisodeServices = async (botToken, chatId) => {
   try {
+    console.log(`[${utils.currentTime()}] Monit Episode Start`);
     await telegramServices.senderNofitication(
       botToken,
       chatId,
       `Monit Episode Start [${utils.currentTime()}]`
     );
-    console.log(`Program Start [${utils.currentTime()}]`);
-    console.log(`Get Animes Ongoing [${utils.currentTime()}]`);
+    console.log(`[${utils.currentTime()}] Get Animes Ongoing`);
     const ongoingAnimeLists = await animeServices.getOngoingAnimes();
 
-    console.log(`Get Updated Link Episode [${utils.currentTime()}]`);
-
-    for (let idxAnime = 0; idxAnime < ongoingAnimeLists.length; idxAnime++) {
-      const {
-        id: animeId,
-        title: animeTitle,
-        anime_detail_sources: animeSources,
-        episodes,
-      } = ongoingAnimeLists[idxAnime];
-
-      await telegramServices.senderNofitication(
-        botToken,
-        chatId,
-        `CHECKING ${animeTitle} [${utils.currentTime()}]`
-      );
-      const animeTotalEpisodes = episodes.length;
-
-      for (let idxSource = 0; idxSource < animeSources.length; idxSource++) {
-        try {
-          const { url_source: animeUrlSource } = animeSources[idxSource];
-          const episodeLinks = await axiosServices.checkUpdatedAnime(
-            animeUrlSource,
-            animeTotalEpisodes
-          );
-          for (
-            let idxEpisode = 0;
-            idxEpisode < episodeLinks.length;
-            idxEpisode++
-          ) {
-            try {
-              const { episodeType, numEps } =
-                utils.getEpisodeTypeAndNumberEpisode(episodeLinks[idxEpisode]);
-              const embedVideo = await axiosServices.getEmbedUpdatedAnime(
-                episodeLinks[idxEpisode]
-              );
-              const episodeSlug = utils.createEpisodeSlug(
-                slugs(animeTitle),
-                episodeType,
-                numEps
-              );
-              const createdEpisode = await animeServices.postNewEpisode({
-                episode_slug: episodeSlug,
-                episode_type: episodeType,
-                number_episode: parseInt(numEps),
-                url_source: episodeLinks[idxEpisode],
-                anime_id: animeId,
-              });
-              await animeServices.postNewEpisodeSource({
-                ...createdEpisode,
-                url_source: embedVideo,
-              });
-              await telegramServices.senderSuccessUpdateEpisode(
+    console.log(`[${utils.currentTime()}] Get Updated Link Episode`);
+    
+    ongoingAnimeLists.forEach((ongoingAnime) => {
+      checkingEpisodeQueue.push(ongoingAnime, (error, taskResult) => {
+        if (error) {
+          console.log(error);
+        }
+        taskResult.forEach((task) => {
+          updateEpisodeQueue.push(task, async (error, taskResult) => {
+            if (error) {
+              return await telegramServices.senderNofitication(
                 botToken,
                 chatId,
-                animeTitle,
-                numEps
-              );
-            } catch (error) {
-              console.log(error);
-              await telegramServices.senderNofitication(
-                botToken,
-                chatId,
-                error.message
+                `${error.message}__${task.animeTitle}`
               );
             }
-          }
-          await telegramServices.senderNofitication(
-            botToken,
-            chatId,
-            `UP TO DATE ${animeTitle} [${utils.currentTime()}]`
-          );
-        } catch (error) {
-          console.log(error);
-          await telegramServices.senderNofitication(
-            botToken,
-            chatId,
-            error.message
-          );
-        }
-      }
-    }
+            await telegramServices.senderSuccessUpdateEpisode(
+              botToken,
+              chatId,
+              taskResult.animeTitle,
+              taskResult.numEps
+            );
+          });
+        });
+      })
+    });
     await telegramServices.senderNofitication(
       botToken,
       chatId,

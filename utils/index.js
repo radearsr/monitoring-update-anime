@@ -7,6 +7,7 @@ const currentTime = () => {
   let seconds = date.getSeconds();
   hours = hours < 10 ? `0${hours}` : hours;
   minutes = minutes < 10 ? "0" + minutes : minutes;
+  seconds = seconds < 10 ? "0" + seconds : seconds;
   const strTime = `${hours}:${minutes}:${seconds}`;
   return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${strTime}`;
 };
@@ -21,6 +22,17 @@ const compareAndListed = (localAnimeLists, liveAnimeLists) => {
     }
   });
   return resultAnimes;
+};
+
+const compareAndListedEpisode = (localEpisodeLists, liveEpisodeLists) => {
+  const resultEpisodes = [];
+  liveEpisodeLists.forEach((liveEpisode) => {
+    const sameEpisode = localEpisodeLists.find((localEpisode) => (localEpisode.url_source === liveEpisode));
+    if (!sameEpisode) {
+      resultEpisodes.push(liveEpisode);
+    }
+  });
+  return resultEpisodes;
 };
 
 const getEpisodeTypeAndNumberEpisode = (linkEpisode) => {
@@ -53,7 +65,7 @@ const getEpisodeTypeAndNumberEpisode = (linkEpisode) => {
 };
 
 const createEpisodeSlug = (animeSlug, episodeType, numEpisode) => {
-  numEpisode = numEpisode < 10 ? `0${numEpisode}` : numEpisode;
+  numEpisode = numEpisode.length < 2 && numEpisode < 10 ? `0${numEpisode}` : numEpisode;
   let slug;
   switch (episodeType) {
     case "MV":
@@ -93,5 +105,6 @@ module.exports = {
   compareAndListed,
   getEpisodeTypeAndNumberEpisode,
   createEpisodeSlug,
-  fixingDateFromText
+  fixingDateFromText,
+  compareAndListedEpisode,
 };
